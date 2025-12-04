@@ -1,0 +1,6 @@
+{
+  "extends": ["../../../.eslintrc.json"],
+  "parserOptions": {
+    "project": ["packages/engine/scram-node/tsconfig.*?.json"]
+  }
+}
