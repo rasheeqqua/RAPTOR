@@ -5,7 +5,7 @@
   "scripts": {
     "postinstall": "ts-patch install -s",
     "prebuild": "rimraf dist",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:manager": "nest start --watch",
