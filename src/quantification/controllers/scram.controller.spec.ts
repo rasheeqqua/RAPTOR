@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ScramController } from './scram.controller';
 import { ProducerService } from '../services/producer.service';
 import { StorageService } from '../services/storage.service';
-import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 vi.mock('@nestia/core', async () => {
   const common = await import('@nestjs/common');
@@ -19,8 +22,6 @@ vi.mock('@nestia/core', async () => {
 
 describe('ScramController', () => {
   let controller: ScramController;
-  let producerService: ProducerService;
-  let storageService: StorageService;
 
   const mockProducerService = {
     createAndQueueQuant: vi.fn(),
@@ -49,8 +50,6 @@ describe('ScramController', () => {
     }).compile();
 
     controller = module.get<ScramController>(ScramController);
-    producerService = module.get<ProducerService>(ProducerService);
-    storageService = module.get<StorageService>(StorageService);
   });
 
   it('should be defined', () => {
@@ -67,14 +66,20 @@ describe('ScramController', () => {
 
     it('should queue sequence batch job', async () => {
       const sequenceJobIds = ['job-1-seq1', 'job-1-seq2'];
-      mockProducerService.createAndQueueSequenceBatch.mockResolvedValue(sequenceJobIds);
-      const result = await controller.createAndQueueQuant({} as any, { distributedSequences: 'yes' });
+      mockProducerService.createAndQueueSequenceBatch.mockResolvedValue(
+        sequenceJobIds,
+      );
+      const result = await controller.createAndQueueQuant({} as any, {
+        distributedSequences: 'yes',
+      });
       expect(result).toEqual({ parentJobId: 'job-1', sequenceJobIds });
     });
 
     it('should throw InternalServerErrorException on error', async () => {
       mockProducerService.createAndQueueQuant.mockRejectedValue(new Error());
-      await expect(controller.createAndQueueQuant({} as any)).rejects.toThrow(InternalServerErrorException);
+      await expect(controller.createAndQueueQuant({} as any)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
@@ -88,19 +93,31 @@ describe('ScramController', () => {
 
     it('should queue adaptive sequence batch job', async () => {
       const sequenceJobIds = ['job-1-seq1', 'job-1-seq2'];
-      mockProducerService.createAndQueueAdaptiveSequenceBatch.mockResolvedValue(sequenceJobIds);
-      const result = await controller.createAndQueueAdaptiveQuant({} as any, { distributedSequences: 'yes' });
+      mockProducerService.createAndQueueAdaptiveSequenceBatch.mockResolvedValue(
+        sequenceJobIds,
+      );
+      const result = await controller.createAndQueueAdaptiveQuant({} as any, {
+        distributedSequences: 'yes',
+      });
       expect(result).toEqual({ parentJobId: 'job-1', sequenceJobIds });
     });
 
     it('should throw InternalServerErrorException if no sequences extracted', async () => {
-      mockProducerService.createAndQueueAdaptiveSequenceBatch.mockResolvedValue([]);
-      await expect(controller.createAndQueueAdaptiveQuant({} as any, { distributedSequences: 'yes' })).rejects.toThrow(InternalServerErrorException);
+      mockProducerService.createAndQueueAdaptiveSequenceBatch.mockResolvedValue(
+        [],
+      );
+      await expect(
+        controller.createAndQueueAdaptiveQuant({} as any, {
+          distributedSequences: 'yes',
+        }),
+      ).rejects.toThrow(InternalServerErrorException);
     });
 
     it('should throw InternalServerErrorException on error', async () => {
       mockProducerService.createAndQueueQuant.mockRejectedValue(new Error());
-      await expect(controller.createAndQueueAdaptiveQuant({} as any)).rejects.toThrow(InternalServerErrorException);
+      await expect(
+        controller.createAndQueueAdaptiveQuant({} as any),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -114,7 +131,9 @@ describe('ScramController', () => {
 
     it('should throw NotFoundException on error', async () => {
       mockStorageService.getJobStatus.mockRejectedValue(new Error());
-      await expect(controller.getJobStatus('job-id')).rejects.toThrow(NotFoundException);
+      await expect(controller.getJobStatus('job-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -128,7 +147,9 @@ describe('ScramController', () => {
 
     it('should throw NotFoundException on error', async () => {
       mockStorageService.getAggregatedJobOutput.mockRejectedValue(new Error());
-      await expect(controller.getAggregatedOutput('job-id')).rejects.toThrow(NotFoundException);
+      await expect(controller.getAggregatedOutput('job-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

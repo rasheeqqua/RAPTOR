@@ -1,6 +1,5 @@
 import { HttpExceptionFilter } from './http-exception.filter';
 import { HttpException, ArgumentsHost } from '@nestjs/common';
-import { Request, Response } from 'express';
 
 describe('HttpExceptionFilter', () => {
   let filter: HttpExceptionFilter;

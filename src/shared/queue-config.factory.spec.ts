@@ -4,12 +4,16 @@ import { ConfigService } from '@nestjs/config';
 
 describe('QueueConfigFactory', () => {
   let factory: QueueConfigFactory;
-  let configService: ConfigService;
 
   const mockConfigService = {
     getOrThrow: vi.fn((key: string) => {
       if (key.includes('DURABLE')) return true;
-      if (key.includes('TTL') || key.includes('LENGTH') || key.includes('PREFETCH')) return 100;
+      if (
+        key.includes('TTL') ||
+        key.includes('LENGTH') ||
+        key.includes('PREFETCH')
+      )
+        return 100;
       return key; // Return the key itself as the value for strings
     }),
   };
@@ -24,7 +28,6 @@ describe('QueueConfigFactory', () => {
     }).compile();
 
     factory = module.get<QueueConfigFactory>(QueueConfigFactory);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {

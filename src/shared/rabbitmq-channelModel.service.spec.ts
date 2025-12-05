@@ -13,7 +13,6 @@ vi.mock('amqplib', () => ({
 
 describe('RabbitMQChannelModelService', () => {
   let service: RabbitMQChannelModelService;
-  let configService: ConfigService;
 
   const mockConfigService = {
     getOrThrow: vi.fn(),
@@ -33,8 +32,9 @@ describe('RabbitMQChannelModelService', () => {
       ],
     }).compile();
 
-    service = module.get<RabbitMQChannelModelService>(RabbitMQChannelModelService);
-    configService = module.get<ConfigService>(ConfigService);
+    service = module.get<RabbitMQChannelModelService>(
+      RabbitMQChannelModelService,
+    );
   });
 
   it('should be defined', () => {
@@ -49,7 +49,9 @@ describe('RabbitMQChannelModelService', () => {
 
       const result = await service.getChannelModel('TestService');
       expect(result).toBe(mockChannelModel);
-      expect(amqp.connect).toHaveBeenCalledWith('amqp://localhost', { heartbeat: 60 });
+      expect(amqp.connect).toHaveBeenCalledWith('amqp://localhost', {
+        heartbeat: 60,
+      });
     });
 
     it('should use default heartbeat if invalid', async () => {
@@ -58,14 +60,18 @@ describe('RabbitMQChannelModelService', () => {
       (amqp.connect as any).mockResolvedValue(mockChannelModel);
 
       await service.getChannelModel('TestService');
-      expect(amqp.connect).toHaveBeenCalledWith('amqp://localhost', { heartbeat: 120 });
+      expect(amqp.connect).toHaveBeenCalledWith('amqp://localhost', {
+        heartbeat: 120,
+      });
     });
 
     it('should throw RpcException on connection failure', async () => {
       mockConfigService.getOrThrow.mockReturnValue('amqp://localhost');
       (amqp.connect as any).mockRejectedValue(new Error('Connection failed'));
 
-      await expect(service.getChannelModel('TestService')).rejects.toThrow(RpcException);
+      await expect(service.getChannelModel('TestService')).rejects.toThrow(
+        RpcException,
+      );
     });
   });
 
@@ -74,14 +80,19 @@ describe('RabbitMQChannelModelService', () => {
       const mockChannel = {};
       mockChannelModel.createChannel.mockResolvedValue(mockChannel);
 
-      const result = await service.getChannel(mockChannelModel as any, 'TestService');
+      const result = await service.getChannel(
+        mockChannelModel as any,
+        'TestService',
+      );
       expect(result).toBe(mockChannel);
     });
 
     it('should throw RpcException on channel creation failure', async () => {
       mockChannelModel.createChannel.mockRejectedValue(new Error('Failed'));
 
-      await expect(service.getChannel(mockChannelModel as any, 'TestService')).rejects.toThrow(RpcException);
+      await expect(
+        service.getChannel(mockChannelModel as any, 'TestService'),
+      ).rejects.toThrow(RpcException);
     });
   });
 });

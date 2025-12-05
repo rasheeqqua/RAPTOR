@@ -4,7 +4,6 @@ import { MinioService } from '../../shared/minio.service';
 
 describe('StorageService', () => {
   let service: StorageService;
-  let minioService: MinioService;
 
   const mockMinioService = {
     getAllJobMetadata: vi.fn(),
@@ -23,7 +22,6 @@ describe('StorageService', () => {
     }).compile();
 
     service = module.get<StorageService>(StorageService);
-    minioService = module.get<MinioService>(MinioService);
   });
 
   it('should be defined', () => {
@@ -50,7 +48,7 @@ describe('StorageService', () => {
     it('should return job status for single job', async () => {
       const metadata = { jobId: '1', inputId: 'input-1' };
       mockMinioService.getJobMetadata.mockResolvedValue(metadata);
-      
+
       const result = await service.getJobStatus('1');
       expect(result).toEqual({
         inputId: 'input-1',
@@ -60,9 +58,13 @@ describe('StorageService', () => {
     });
 
     it('should return job status for parent job', async () => {
-      const metadata = { jobId: '1', inputId: 'input-1', childJobs: ['2', '3'] };
+      const metadata = {
+        jobId: '1',
+        inputId: 'input-1',
+        childJobs: ['2', '3'],
+      };
       mockMinioService.getJobMetadata.mockResolvedValue(metadata);
-      
+
       const result = await service.getJobStatus('1');
       expect(result).toEqual({
         inputId: 'input-1',
@@ -90,11 +92,11 @@ describe('StorageService', () => {
 
   describe('getJobStats', () => {
     it('should return stats for single job', async () => {
-      const metadata = { 
-        jobId: '1', 
-        sentAt: 100, 
-        receivedAt: 200, 
-        stats: { executionTime: 10 } 
+      const metadata = {
+        jobId: '1',
+        sentAt: 100,
+        receivedAt: 200,
+        stats: { executionTime: 10 },
       };
       mockMinioService.getJobMetadata.mockResolvedValue(metadata);
 
@@ -107,16 +109,16 @@ describe('StorageService', () => {
     });
 
     it('should return stats for parent and child jobs', async () => {
-      const parentMetadata = { 
-        jobId: '1', 
+      const parentMetadata = {
+        jobId: '1',
         childJobs: ['2'],
-        sentAt: 100 
+        sentAt: 100,
       };
-      const childMetadata = { 
-        jobId: '2', 
+      const childMetadata = {
+        jobId: '2',
         sentAt: 150,
         receivedAt: 250,
-        stats: { executionTime: 5 }
+        stats: { executionTime: 5 },
       };
 
       mockMinioService.getJobMetadata
@@ -134,10 +136,10 @@ describe('StorageService', () => {
     });
 
     it('should handle errors when fetching child stats', async () => {
-      const parentMetadata = { 
-        jobId: '1', 
+      const parentMetadata = {
+        jobId: '1',
         childJobs: ['2'],
-        sentAt: 100 
+        sentAt: 100,
       };
 
       mockMinioService.getJobMetadata
@@ -153,7 +155,7 @@ describe('StorageService', () => {
     it('should return output for single job', async () => {
       const metadata = { jobId: '1', outputId: 'out-1' };
       const output = { result: 'success' };
-      
+
       mockMinioService.getJobMetadata.mockResolvedValue(metadata);
       mockMinioService.getOutputData.mockResolvedValue(JSON.stringify(output));
 
@@ -163,24 +165,32 @@ describe('StorageService', () => {
     });
 
     it('should aggregate results for parent job', async () => {
-      const parentMetadata = { jobId: '1', outputId: 'out-1', childJobs: ['2'] };
-      const childMetadata = { jobId: '2', status: 'completed', outputId: 'out-2' };
-      const childOutput = { 
-        results: { 
-          initiatingEvents: [{ name: 'IE1', sequences: [{ name: 'SEQ1' }] }] 
-        } 
+      const parentMetadata = {
+        jobId: '1',
+        outputId: 'out-1',
+        childJobs: ['2'],
+      };
+      const childMetadata = {
+        jobId: '2',
+        status: 'completed',
+        outputId: 'out-2',
+      };
+      const childOutput = {
+        results: {
+          initiatingEvents: [{ name: 'IE1', sequences: [{ name: 'SEQ1' }] }],
+        },
       };
 
       mockMinioService.getJobMetadata
         .mockResolvedValueOnce(parentMetadata)
         .mockResolvedValueOnce(childMetadata);
-      
+
       mockMinioService.getOutputData
         .mockResolvedValueOnce(JSON.stringify(childOutput)) // child output (called first via collectChildOutputs)
         .mockResolvedValueOnce('{}'); // parent output (called second)
 
       const result = await service.getAggregatedJobOutput('1');
-      
+
       expect(result.childOutputs).toHaveLength(1);
       expect(result.aggregatedOutput).toBeDefined();
       expect(result.aggregatedOutput.results.initiatingEvents).toHaveLength(1);
@@ -188,34 +198,45 @@ describe('StorageService', () => {
 
     it('should handle failed child jobs', async () => {
       const parentMetadata = { jobId: '1', childJobs: ['2'] };
-      const childMetadata = { jobId: '2', status: 'failed', error: 'Some error' };
+      const childMetadata = {
+        jobId: '2',
+        status: 'failed',
+        error: 'Some error',
+      };
 
       mockMinioService.getJobMetadata
         .mockResolvedValueOnce(parentMetadata)
         .mockResolvedValueOnce(childMetadata);
-      
+
       mockMinioService.getOutputData.mockResolvedValue('{}');
 
       const result = await service.getAggregatedJobOutput('1');
-      
+
       expect(result.failedJobs).toHaveLength(1);
-      expect(result.failedJobs![0]).toEqual({ jobId: '2', error: 'Some error' });
+      expect(result.failedJobs![0]).toEqual({
+        jobId: '2',
+        error: 'Some error',
+      });
     });
 
     it('should handle missing output for completed child job', async () => {
       const parentMetadata = { jobId: '1', childJobs: ['2'] };
-      const childMetadata = { jobId: '2', status: 'completed', outputId: 'out-2' };
+      const childMetadata = {
+        jobId: '2',
+        status: 'completed',
+        outputId: 'out-2',
+      };
 
       mockMinioService.getJobMetadata
         .mockResolvedValueOnce(parentMetadata)
         .mockResolvedValueOnce(childMetadata);
-      
+
       mockMinioService.getOutputData
         .mockRejectedValueOnce(new Error('Not found')) // child output (called first)
         .mockResolvedValueOnce('{}'); // parent output (called second)
 
       const result = await service.getAggregatedJobOutput('1');
-      
+
       expect(result.failedJobs).toHaveLength(1);
       expect(result.failedJobs![0].error).toBe('Output not available');
     });

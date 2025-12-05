@@ -1,6 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConsumerService } from './consumer.service';
-import { QueueService, RabbitMQChannelModelService, QueueConfigFactory, MinioService } from '../../shared';
+import {
+  QueueService,
+  RabbitMQChannelModelService,
+  QueueConfigFactory,
+  MinioService,
+} from '../../shared';
 import { runQuantificationWithWorker } from '../workers/quantify-worker-runner';
 import { RpcException } from '@nestjs/microservices';
 
@@ -47,8 +52,12 @@ describe('ConsumerService', () => {
 
   const mockQueueConfigFactory = {
     createQuantJobQueueConfig: vi.fn().mockReturnValue({ name: 'quant' }),
-    createDistributedSequencesJobQueueConfig: vi.fn().mockReturnValue({ name: 'dist' }),
-    createAdaptiveSequencesJobQueueConfig: vi.fn().mockReturnValue({ name: 'adapt' }),
+    createDistributedSequencesJobQueueConfig: vi
+      .fn()
+      .mockReturnValue({ name: 'dist' }),
+    createAdaptiveSequencesJobQueueConfig: vi
+      .fn()
+      .mockReturnValue({ name: 'adapt' }),
   };
 
   const mockMinioService = {
@@ -71,7 +80,9 @@ describe('ConsumerService', () => {
 
     service = module.get<ConsumerService>(ConsumerService);
     queueService = module.get<QueueService>(QueueService);
-    rabbitmqService = module.get<RabbitMQChannelModelService>(RabbitMQChannelModelService);
+    rabbitmqService = module.get<RabbitMQChannelModelService>(
+      RabbitMQChannelModelService,
+    );
     minioService = module.get<MinioService>(MinioService);
   });
 
@@ -105,16 +116,21 @@ describe('ConsumerService', () => {
     it('should process valid message successfully', async () => {
       const msg = { content: Buffer.from('{}') };
       const quantRequest = { _id: 'job-id' };
-      
+
       const typiaMock = await import('typia');
       (typiaMock.default.json.assertParse as any).mockReturnValue(quantRequest);
-      (runQuantificationWithWorker as any).mockResolvedValue({ result: 'success' });
+      (runQuantificationWithWorker as any).mockResolvedValue({
+        result: 'success',
+      });
 
       await consumeCallback(msg);
 
       expect(typiaMock.default.json.assertParse).toHaveBeenCalled();
       expect(runQuantificationWithWorker).toHaveBeenCalled();
-      expect(minioService.updateJobMetadata).toHaveBeenCalledWith('job-id', expect.objectContaining({ status: 'running' }));
+      expect(minioService.updateJobMetadata).toHaveBeenCalledWith(
+        'job-id',
+        expect.objectContaining({ status: 'running' }),
+      );
       expect(minioService.storeOutputData).toHaveBeenCalled();
       expect(mockChannel.ack).toHaveBeenCalledWith(msg);
     });
@@ -122,20 +138,25 @@ describe('ConsumerService', () => {
     it('should nack and update metadata on worker failure', async () => {
       const msg = { content: Buffer.from('{}') };
       const quantRequest = { _id: 'job-id' };
-      
+
       const typiaMock = await import('typia');
       (typiaMock.default.json.assertParse as any).mockReturnValue(quantRequest);
-      (runQuantificationWithWorker as any).mockRejectedValue(new Error('Worker failed'));
+      (runQuantificationWithWorker as any).mockRejectedValue(
+        new Error('Worker failed'),
+      );
 
       await consumeCallback(msg);
 
       expect(mockChannel.nack).toHaveBeenCalledWith(msg, false, false);
-      expect(minioService.updateJobMetadata).toHaveBeenCalledWith('job-id', expect.objectContaining({ status: 'failed' }));
+      expect(minioService.updateJobMetadata).toHaveBeenCalledWith(
+        'job-id',
+        expect.objectContaining({ status: 'failed' }),
+      );
     });
 
     it('should nack on parse error', async () => {
       const msg = { content: Buffer.from('invalid-json') };
-      
+
       const typiaMock = await import('typia');
       (typiaMock.default.json.assertParse as any).mockImplementation(() => {
         throw new Error('Parse error');
@@ -145,7 +166,7 @@ describe('ConsumerService', () => {
       // However, looking at the code:
       // catch (err) { this.channel?.nack... throw new RpcException }
       // So it throws.
-      
+
       await expect(consumeCallback(msg)).rejects.toThrow(RpcException);
       expect(mockChannel.nack).toHaveBeenCalledWith(msg, false, false);
     });
