@@ -84,7 +84,7 @@ export class ScramController {
   @TypedRoute.Get('/scram')
   public async getQuantifiedReports(): Promise<JobMetadata[]> {
     try {
-      return this.storageService.getQuantifiedReports();
+      return await this.storageService.getQuantifiedReports();
     } catch {
       throw new NotFoundException(
         'Server was unable to find the requested list of quantified reports.',
@@ -97,7 +97,7 @@ export class ScramController {
     @TypedParam('jobId') jobId: string,
   ): Promise<JobStatusIds> {
     try {
-      return this.storageService.getJobStatus(jobId);
+      return await this.storageService.getJobStatus(jobId);
     } catch {
       throw new NotFoundException(`Job with ID ${jobId} not found.`);
     }
@@ -120,7 +120,7 @@ export class ScramController {
     @TypedParam('jobId') jobId: string,
   ): Promise<JobOutputResponse> {
     try {
-      return this.storageService.getAggregatedJobOutput(jobId);
+      return await this.storageService.getAggregatedJobOutput(jobId);
     } catch {
       throw new NotFoundException(`Job with ID ${jobId} not found.`);
     }
