@@ -25,11 +25,12 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     apt update && \
     apt install -y --no-install-recommends $BUILD_PACKAGES $SCRAM_BUILD_PACKAGES $SCRAM_RUNTIME_PACKAGES && \
     update-ca-certificates && \
-    wget https://apt.llvm.org/llvm.sh && \
-    chmod +x llvm.sh && \
-    ./llvm.sh $CLANG_VERSION && \
+    # Manual LLVM setup with retries to handle network flakes
+    wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc && \
+    add-apt-repository -y "deb http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$CLANG_VERSION main" && \
     apt update && \
-    apt install -y --no-install-recommends $LLVM_PACKAGES && \
+    # Retry loop for apt install
+    (for i in {1..5}; do apt install -y --no-install-recommends $LLVM_PACKAGES && break || sleep 15; done) && \
     npm install -g pnpm
 
 COPY . .

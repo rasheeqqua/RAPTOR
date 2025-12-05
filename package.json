@@ -6,11 +6,13 @@
     "postinstall": "ts-patch install -s",
     "prebuild": "rimraf dist",
     "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:manager": "nest start --watch",
     "start:engine": "nest start --watch --entryFile main-engine",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {
     "@nestia/core": "3.12.0",
@@ -40,6 +42,12 @@
     "@types/express": "4.17.17",
     "@types/amqplib": "0.10.7",
     "@types/node": "20.3.1",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.42.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.0",
     "rimraf": "5.0.0",
     "ts-loader": "9.4.3",
     "ts-node": "10.9.1",
