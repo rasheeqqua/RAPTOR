@@ -5,8 +5,6 @@ networks:
   rmq_net:
     driver: overlay
     attachable: true
-  traefik-public:
-    external: true
 
 configs:
   rabbitmq_plugins:
@@ -67,7 +65,7 @@ services:
     secrets:
       - CLOUDFLARE_TUNNEL_TOKEN
     networks:
-      - traefik-public
+      - svc_net
       - rmq_net
     deploy:
       mode: replicated
@@ -90,8 +88,9 @@ services:
     environment:
       NODE_ENV: ${CI_BUILD_TYPE}
       DEBUG: ${CI_DEBUG}
+      NODE_OPTIONS: "--max-old-space-size=8192"
     networks:
-      - traefik-public
+      - svc_net
       - rmq_net
     deploy:
       <<: *shared-replicated
@@ -100,22 +99,6 @@ services:
         max_replicas_per_node: 1
         constraints:
           - "${DEPLOYMENT_BROKER_POOL}"
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.${APP_NAME}-raptor-manager-http.rule=Host(`${HOST_URL?Variable not set}`) && PathPrefix(`/q`)
-        - traefik.http.routers.${APP_NAME}-raptor-manager-http.entrypoints=http
-        - traefik.http.routers.${APP_NAME}-raptor-manager-http.middlewares=https-redirect,gzip
-        - traefik.http.routers.${APP_NAME}-raptor-manager-http.service=${APP_NAME}-raptor-manager
-        - traefik.http.routers.${APP_NAME}-raptor-manager-https.rule=Host(`${HOST_URL?Variable not set}`) && PathPrefix(`/q`)
-        - traefik.http.routers.${APP_NAME}-raptor-manager-https.entrypoints=https
-        - traefik.http.routers.${APP_NAME}-raptor-manager-https.tls=true
-        - traefik.http.routers.${APP_NAME}-raptor-manager-https.tls.certresolver=le
-        - traefik.http.routers.${APP_NAME}-raptor-manager-https.middlewares=gzip
-        - traefik.http.routers.${APP_NAME}-raptor-manager-https.service=${APP_NAME}-raptor-manager
-        - traefik.http.services.${APP_NAME}-raptor-manager.loadbalancer.server.port=3000
-
   raptor-engine:
     image: ${IMAGE_BACKEND}
     <<: *shared-nestjs_conf
@@ -123,6 +106,7 @@ services:
     environment:
       NODE_ENV: ${CI_BUILD_TYPE}
       DEBUG: ${CI_DEBUG}
+      NODE_OPTIONS: "--max-old-space-size=8192"
     networks:
       - rmq_net
     deploy:
@@ -148,64 +132,34 @@ services:
       - source: rabbitmq_conf
         target: /etc/rabbitmq/rabbitmq.conf
     deploy:
-      placement:
-        constraints:
-          - node.labels.high_performance == true
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.${APP_NAME}-rmq-http.rule=Host(`rmq-${HOST_URL?Variable not set}`)
-        - traefik.http.routers.${APP_NAME}-rmq-http.entrypoints=http
-        - traefik.http.routers.${APP_NAME}-rmq-http.middlewares=https-redirect,gzip
-        - traefik.http.routers.${APP_NAME}-rmq-http.service=${APP_NAME}-rmq
-        - traefik.http.routers.${APP_NAME}-rmq-https.rule=Host(`rmq-${HOST_URL?Variable not set}`)
-        - traefik.http.routers.${APP_NAME}-rmq-https.entrypoints=https
-        - traefik.http.routers.${APP_NAME}-rmq-https.tls=true
-        - traefik.http.routers.${APP_NAME}-rmq-https.tls.certresolver=le
-        - traefik.http.routers.${APP_NAME}-rmq-https.middlewares=gzip,traefik-forward-auth
-        - traefik.http.routers.${APP_NAME}-rmq-https.service=${APP_NAME}-rmq
-        - traefik.http.services.${APP_NAME}-rmq.loadbalancer.server.port=15672
-
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
+      mode: replicated
+  rabbitmq:
+    image: rabbitmq:management-alpine
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
     networks:
-      - traefik-public
+      - svc_net
       - rmq_net
+    configs:
+      - source: rabbitmq_plugins
+        target: /etc/rabbitmq/enabled_plugins
+      - source: rabbitmq_conf
+        target: /etc/rabbitmq/rabbitmq.conf
     deploy:
+      mode: replicated
+      replicas: 1
       placement:
         constraints:
           - node.labels.high_performance == true
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=traefik-public
-        - traefik.constraint-label=traefik-public
-        - traefik.http.routers.${APP_NAME}-minio-api-http.rule=Host(`minio-api-${HOST_URL?Variable not set}`)
-        - traefik.http.routers.${APP_NAME}-minio-api-http.entrypoints=http
-        - traefik.http.routers.${APP_NAME}-minio-api-http.middlewares=https-redirect,gzip
-        - traefik.http.routers.${APP_NAME}-minio-api-http.service=${APP_NAME}-minio-api
-        - traefik.http.routers.${APP_NAME}-minio-api-https.rule=Host(`minio-api-${HOST_URL?Variable not set}`)
-        - traefik.http.routers.${APP_NAME}-minio-api-https.entrypoints=https
-        - traefik.http.routers.${APP_NAME}-minio-api-https.tls=true
-        - traefik.http.routers.${APP_NAME}-minio-api-https.tls.certresolver=le
-        - traefik.http.routers.${APP_NAME}-minio-api-https.middlewares=gzip
-        - traefik.http.routers.${APP_NAME}-minio-api-https.service=${APP_NAME}-minio-api
-        - traefik.http.services.${APP_NAME}-minio-api.loadbalancer.server.port=9000
-        - traefik.http.routers.${APP_NAME}-minio-console-http.rule=Host(`minio-${HOST_URL?Variable not set}`)
-        - traefik.http.routers.${APP_NAME}-minio-console-http.entrypoints=http
-        - traefik.http.routers.${APP_NAME}-minio-console-http.middlewares=https-redirect,gzip
-        - traefik.http.routers.${APP_NAME}-minio-console-http.service=${APP_NAME}-minio-console
-        - traefik.http.routers.${APP_NAME}-minio-console-https.rule=Host(`minio-${HOST_URL?Variable not set}`)
-        - traefik.http.routers.${APP_NAME}-minio-console-https.entrypoints=https
-        - traefik.http.routers.${APP_NAME}-minio-console-https.tls=true
-        - traefik.http.routers.${APP_NAME}-minio-console-https.tls.certresolver=le
-        - traefik.http.routers.${APP_NAME}-minio-console-https.middlewares=gzip
-        - traefik.http.routers.${APP_NAME}-minio-console-https.service=${APP_NAME}-minio-console
-        - traefik.http.services.${APP_NAME}-minio-console.loadbalancer.server.port=9001
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.labels.high_performance == true
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
