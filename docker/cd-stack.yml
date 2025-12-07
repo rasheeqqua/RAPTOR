@@ -124,21 +124,6 @@ services:
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
     networks:
-      - traefik-public
-      - rmq_net
-    configs:
-      - source: rabbitmq_plugins
-        target: /etc/rabbitmq/enabled_plugins
-      - source: rabbitmq_conf
-        target: /etc/rabbitmq/rabbitmq.conf
-    deploy:
-      mode: replicated
-  rabbitmq:
-    image: rabbitmq:management-alpine
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/etc/timezone:/etc/timezone:ro"
-    networks:
       - svc_net
       - rmq_net
     configs:
@@ -149,13 +134,6 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-      placement:
-        constraints:
-          - node.labels.high_performance == true
-      restart_policy:
-        condition: any
-        delay: 5s
-        max_attempts: 3
       placement:
         constraints:
           - node.labels.high_performance == true
