@@ -150,7 +150,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.labels.host_performance != low
+          - node.labels.high_performance == true
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
@@ -180,6 +180,9 @@ services:
       - traefik-public
       - rmq_net
     deploy:
+      placement:
+        constraints:
+          - node.labels.high_performance == true
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
