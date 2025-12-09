@@ -10,11 +10,11 @@ This guide shows you how to deploy your RAPTOR application on your university cl
 
 ---
 
-## Step 1: Sign Up for Cloudflare (FREE)
+## Step 1: Sign Up for Cloudflare
 
 1. Go to https://dash.cloudflare.com/sign-up
-2. Create a free account (no credit card needed)
-3. Verify your email
+2. Create an account
+3. Verify your email and provide credit card information
 
 ---
 
@@ -41,7 +41,7 @@ echo 'deb [signed-by=/usr/share/keyrings/cloudflare-public-v2.gpg] https://pkg.c
 # install cloudflared
 sudo apt-get update && sudo apt-get install cloudflared
 
-sudo cloudflared service install eyJhIjoiMWIzZTkwZTRkMGEzNDBkZGUwNWJiOGE4MDZlMzNiNzgiLCJ0IjoiNGJhYjhhNTMtYTY5Yy00YmRmLTk4MWMtYTE4NDNmNTZlODg3IiwicyI6Ik1UZGhZakl4TVRBdE9EWXhPQzAwTVRRMkxUbGlNRFV0TXpNeVl6VTJOV1U1T0RBdyJ9
+sudo cloudflared service install eyJh...
 ```
 
 8. **Copy the tunnel token** - and keep this safe!
