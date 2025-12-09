@@ -96,5 +96,45 @@ describe('RaptorManagerController', () => {
       mockService.getCompletedJobs.mockResolvedValue(result);
       expect(await controller.getCompletedJobs()).toBe(result);
     });
+
+    it('should throw NotFoundException on error', async () => {
+      mockService.getCompletedJobs.mockRejectedValue(new Error());
+      await expect(controller.getCompletedJobs()).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('getPendingJobs error handling', () => {
+    it('should throw NotFoundException on error', async () => {
+      mockService.getPendingJobs.mockRejectedValue(new Error());
+      await expect(controller.getPendingJobs()).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('getRunningJobs error handling', () => {
+    it('should throw NotFoundException on error', async () => {
+      mockService.getRunningJobs.mockRejectedValue(new Error());
+      await expect(controller.getRunningJobs()).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('createJob', () => {
+    it('should create a job', () => {
+      const result = { message: 'Job created' };
+      mockService.createJob.mockReturnValue(result);
+      expect(controller.createJob()).toBe(result);
+    });
+
+    it('should throw InternalServerErrorException on error', () => {
+      mockService.createJob.mockImplementation(() => {
+        throw new Error();
+      });
+      expect(() => controller.createJob()).toThrow();
+    });
   });
 });
