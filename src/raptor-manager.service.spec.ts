@@ -29,7 +29,7 @@ describe('RaptorManagerService', () => {
   });
 
   describe('getJobTypes', () => {
-    it('should return job types message', () => {
+    it('should return job types with services array', () => {
       const result = service.getJobTypes();
       expect(result).toHaveProperty('services');
       expect(result.services).toBeInstanceOf(Array);
